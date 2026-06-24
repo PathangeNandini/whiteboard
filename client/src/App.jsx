@@ -1,0 +1,52 @@
+
+import { Route,Routes } from "react-router-dom";
+import io from "socket.io-client";
+import { useEffect, useState } from "react";
+
+import Forms from "./components/Forms";
+import RoomPage from "./pages/RoomPage";
+
+import "./App.css";
+
+const server="http://localhost:5000";
+const connectionOptions = {
+  "force new connection": true,
+  "reconnectionAttempts": "Infinity",
+  "timeout": 10000,
+  "transports": ["websocket"]
+};
+
+const socket=io(server,connectionOptions);
+
+const App = () => {
+
+  const[user,setUser]=useState("");
+
+  useEffect(() => {
+    socket.on('userJoined', (data) => {
+      if (data.success) {
+        console.log(`User joined room ${data.roomId} with userId ${data.userId}`);
+        setUser({ roomId: data.roomId, userId: data.userId });
+      } else {
+        console.error('Failed to join room');
+      }
+    });
+  }, []);
+
+  const uuid = () => {
+    var S4=()=>{
+        return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+    }
+    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+  };
+  return (
+    <div className="container">
+      <Routes>
+        <Route path="/" element={<Forms uuid={uuid} socket={socket} setUser={setUser} />} />
+        <Route path="/:roomId" element={<RoomPage user={user}/>} />
+      </Routes>
+    </div>
+  );
+};
+
+export default App;
