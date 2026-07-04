@@ -1,7 +1,9 @@
 import React, { useRef, useState } from "react";
 import "./index.css";
 import WhiteBoard from "../../components/Whiteboard";
-const RoomPage = ({user}) => {
+
+const RoomPage = ({user,socket,users}) => {
+    console.log("RoomPage user:", user);
     const canvasref=useRef(null);
     const ctxref=useRef(null);
 
@@ -9,6 +11,7 @@ const RoomPage = ({user}) => {
     const [color, setColor]=useState("black");
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([]);
+    const [openedUserTab,setOpenedUserTab] = useState(false);
 
     const handleclearcanvas=()=>{
         const canvas = canvasref.current;
@@ -32,12 +35,31 @@ const RoomPage = ({user}) => {
         setHistory(newHistory);
     }
   return (
+    
     <div className="container-fluid">
+    <button type ="button" className="btn btn-dark" onClick={() => setOpenedUserTab(!openedUserTab)}>
+        Users
+    </button>
+    {!openedUserTab && (
+        <div className="col-md-2 position-fixed top-0 end-0 bg-light p-3 border" style={{height: "100vh", overflowY: "auto"}}>
+            <h4>Users in Room</h4>
+            <button type="button" className="btn btn-light btn-block w-100 mt-5" onClick={() => setOpenedUserTab(false)}>
+                Close
+            </button>
+            {users.map((usr,index)=>(
+                <div key={index} className="d-flex align-items-center justify-content-between border p-2 mb-2">
+                    <span>{usr.name}</span>
+                    {usr.presenter && <span className="badge bg-primary">Presenter</span>}
+                </div>
+            ))}
+            </div>)}
       <h1 className="text-center py-4">White Board Sharing App
-         <span className="text-primary">[Users Online: 0]</span></h1>
-        {
-            user.presenter &&(
-                <div className="col-md-12 px-4 mt-4 mb-5 d-flex align-items-center justify-content-between">
+         <span className="text-primary">[Users Online: {users.length}]</span>
+    </h1>
+    
+
+        {user?.presenter &&(
+            <div className="col-md-12 px-4 mt-4 mb-5 d-flex align-items-center justify-content-between">
         <div className="col-md-5 d-flex justify-content-between gap-2">
             <label htmlFor="pencil">Pencil</label>
             <input type="radio" name="tool" id="pencil" value="pencil" checked={tool === "pencil"} onChange={(e) => setTool(e.target.value)} checked={tool === "pencil"} />
@@ -89,6 +111,7 @@ const RoomPage = ({user}) => {
         color={color}
         tool={tool}
         user={user}
+        socket={socket}
          />  
         </div>
     </div>

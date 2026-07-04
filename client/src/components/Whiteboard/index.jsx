@@ -4,18 +4,31 @@ import React, { useEffect, useState, useLayoutEffect } from "react";
 const roughGenerator = rough.generator();
 
 
-const WhiteBoard = ({ canvasref, ctxref, elements, setElements, tool, color,user }) => {
-    if(user?.presenter){
-        <div       
-            
+const WhiteBoard = ({ canvasref, ctxref, elements, setElements, tool, color,user,socket }) => {
+    const [imgURL, setImgURL] = useState(null);  
+    useEffect(() => {
+        socket.on("WhiteBoardDataResponse", (data) => {
+            setImgURL(data.imgURL);
+        });
+    }, []);
+    
+    if(!user?.presenter){
+        return(
+        <div          
             className="border border-dark border-3 overflow-hidden"
             style={{ width: "100%", height: "100%" }} >
 
-        <img src="" alt="Real time white board image shared by presenter "
-        className="w-100 h-100"/>
+        <img src={imgURL} alt="Real time white board image shared by presenter "
+        style={{
+            height:window.innerHeight*2,
+            width:"285%",}} />
         </div>
+        );        
     }
     const [isDrawing, setIsDrawing] = useState(false);
+    
+
+  
 
     useEffect(() => {
         const canvas = canvasref.current;
@@ -35,22 +48,19 @@ const WhiteBoard = ({ canvasref, ctxref, elements, setElements, tool, color,user
         ctx.lineCap = "round";
         ctx.fillStyle = "transparent";
     }, []);
+
     useEffect(() => {
         ctxref.current.strokeStyle = color;
     }, [color]);
+
     useLayoutEffect(() => {
         const canvas = canvasref.current;
-
         if (!canvas) return;
-
         const ctx = canvas.getContext("2d");
-
         if (!ctx) return;
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        if(canvas){
         const roughCanvas = rough.canvas(canvas);
-
         elements.forEach((ele) => {
             if (ele.type === "pencil") {
                 roughCanvas.linearPath(ele.path, {
@@ -123,6 +133,9 @@ const WhiteBoard = ({ canvasref, ctxref, elements, setElements, tool, color,user
             ctx.restore();
         }
         });
+        const canvasImage=canvasref.current.toDataURL();
+        socket.emit("WhiteboardData",canvasImage);
+    }
     }, [elements]);
 
     const startDrawing = (e) => {

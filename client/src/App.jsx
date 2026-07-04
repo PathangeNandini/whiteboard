@@ -1,7 +1,7 @@
-
 import { Route,Routes } from "react-router-dom";
 import io from "socket.io-client";
 import { useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
 
 import Forms from "./components/Forms";
 import RoomPage from "./pages/RoomPage";
@@ -21,15 +21,30 @@ const socket=io(server,connectionOptions);
 const App = () => {
 
   const[user,setUser]=useState("");
+  const [users,setUsers]=useState([]);
 
   useEffect(() => {
     socket.on('userJoined', (data) => {
       if (data.success) {
         console.log(`User joined room ${data.roomId} with userId ${data.userId}`);
-        setUser({ roomId: data.roomId, userId: data.userId });
+        
+        setUser((prevUser) => ({
+          ...prevUser,
+          roomId: data.roomId,
+          userId: data.userId,
+        }));
+        if (data.users) {
+          setUsers(data.users);
+        }
       } else {
         console.error('Failed to join room');
       }
+    });
+    socket.on("allUsersInRoom", (users) => {
+      setUsers(users);
+    });
+    socket.on("userJoinedMessageBroadcasted", (name) => {
+      toast.info(`${name} joined the room`);
     });
   }, []);
 
@@ -41,9 +56,10 @@ const App = () => {
   };
   return (
     <div className="container">
+      <ToastContainer />
       <Routes>
         <Route path="/" element={<Forms uuid={uuid} socket={socket} setUser={setUser} />} />
-        <Route path="/:roomId" element={<RoomPage user={user}/>} />
+        <Route path="/:roomId" element={<RoomPage user={user} socket={socket} users={users}/>} />
       </Routes>
     </div>
   );

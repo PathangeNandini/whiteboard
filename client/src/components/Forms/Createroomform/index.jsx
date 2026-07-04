@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./index.css";
 
-const CreateRoomForm = ({ uuid , socket }) => {
+const CreateRoomForm = ({ uuid , socket ,setUser}) => {
   const [roomId, setRoomId] = useState(uuid());
   const [name, setName] = useState("");
 
@@ -14,9 +14,10 @@ const CreateRoomForm = ({ uuid , socket }) => {
       name: name,
       userId: uuid(),
       host: true,
-      present: true,
+      presenter: true,
     };
     console.log(roomData);
+    setUser(roomData);
     navigate(`/${roomId}`);
     socket.emit("userJoined", roomData);
     // Handle form submission logic here
