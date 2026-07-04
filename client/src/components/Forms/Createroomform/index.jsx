@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./index.css";
 
 const CreateRoomForm = ({ uuid , socket ,setUser}) => {
@@ -7,6 +8,13 @@ const CreateRoomForm = ({ uuid , socket ,setUser}) => {
   const [name, setName] = useState("");
 
   const navigate = useNavigate();
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(roomId)
+      .then(() => toast.success("Room ID copied to clipboard"))
+      .catch(() => toast.error("Could not copy Room ID"));
+  };
+
   const handlecreateroom = (e) => {
     e.preventDefault();
     const roomData = {
@@ -45,7 +53,7 @@ const CreateRoomForm = ({ uuid , socket ,setUser}) => {
                 <button className="btn btn-primary btn-sm me-1" type="button" onClick={() => setRoomId(uuid())}>
                     Generate
                 </button>
-                <button className="btn btn-outline-danger btn-sm me-2" type="button">
+                <button className="btn btn-outline-danger btn-sm me-2" type="button" onClick={handleCopy}>
                     Copy
                 </button>
             </div>  

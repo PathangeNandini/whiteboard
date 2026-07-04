@@ -8,7 +8,7 @@ import RoomPage from "./pages/RoomPage";
 
 import "./App.css";
 
-const server="http://localhost:5000";
+const server = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
 const connectionOptions = {
   "force new connection": true,
   "reconnectionAttempts": "Infinity",
@@ -44,8 +44,12 @@ const App = () => {
       setUsers(users);
     });
     socket.on("userJoinedMessageBroadcasted", (name) => {
-      toast.info(`${name} joined the room`);
+      toast.success(`${name} joined the room`, { theme: "colored" });
     });
+    socket.on("userLeftMessageBroadcasted", (name) => {
+      toast.error(`${name} left the room`, { theme: "colored" });
+    });
+    
   }, []);
 
   const uuid = () => {
@@ -56,7 +60,7 @@ const App = () => {
   };
   return (
     <div className="container">
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop />
       <Routes>
         <Route path="/" element={<Forms uuid={uuid} socket={socket} setUser={setUser} />} />
         <Route path="/:roomId" element={<RoomPage user={user} socket={socket} users={users}/>} />

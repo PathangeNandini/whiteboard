@@ -1,6 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./index.css";
 import WhiteBoard from "../../components/Whiteboard";
+import Chat from "../../components/Chat";
+import Voice from "../../components/Voice";
 
 const RoomPage = ({user,socket,users}) => {
     console.log("RoomPage user:", user);
@@ -11,7 +13,31 @@ const RoomPage = ({user,socket,users}) => {
     const [color, setColor]=useState("black");
     const [elements, setElements] = useState([]);
     const [history, setHistory] = useState([]);
-    const [openedUserTab,setOpenedUserTab] = useState(false);
+
+    const userRef = useRef(user);
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
+
+    useEffect(() => {
+        const leaveRoom = () => {
+            const currentUser = userRef.current;
+            if (currentUser?.userId) {
+                socket.emit("userLeft", {
+                    name: currentUser.name,
+                    roomId: currentUser.roomId,
+                    userId: currentUser.userId,
+                });
+            }
+        };
+
+        window.addEventListener("beforeunload", leaveRoom);
+
+        return () => {
+            leaveRoom();
+            window.removeEventListener("beforeunload", leaveRoom);
+        };
+    }, [socket]);
 
     const handleclearcanvas=()=>{
         const canvas = canvasref.current;
@@ -19,6 +45,17 @@ const RoomPage = ({user,socket,users}) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         setElements([]);
+    }
+    const handleSave = () => {
+        const canvas = canvasref.current;
+        if (!canvas) return;
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `whiteboard-${user?.roomId || "room"}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
     const undo=()=>{
         if(elements.length===0) return;
@@ -37,22 +74,6 @@ const RoomPage = ({user,socket,users}) => {
   return (
     
     <div className="container-fluid">
-    <button type ="button" className="btn btn-dark" onClick={() => setOpenedUserTab(!openedUserTab)}>
-        Users
-    </button>
-    {!openedUserTab && (
-        <div className="col-md-2 position-fixed top-0 end-0 bg-light p-3 border" style={{height: "100vh", overflowY: "auto"}}>
-            <h4>Users in Room</h4>
-            <button type="button" className="btn btn-light btn-block w-100 mt-5" onClick={() => setOpenedUserTab(false)}>
-                Close
-            </button>
-            {users.map((usr,index)=>(
-                <div key={index} className="d-flex align-items-center justify-content-between border p-2 mb-2">
-                    <span>{usr.name}</span>
-                    {usr.presenter && <span className="badge bg-primary">Presenter</span>}
-                </div>
-            ))}
-            </div>)}
       <h1 className="text-center py-4">White Board Sharing App
          <span className="text-primary">[Users Online: {users.length}]</span>
     </h1>
@@ -95,7 +116,7 @@ const RoomPage = ({user,socket,users}) => {
             >Redo</button>
         </div>
         <div className="col-md-2 d-flex gap-2">
-            <button className="btn btn-success mt-1">Save</button>
+            <button className="btn btn-success mt-1" onClick={handleSave}>Save</button>
             <button className="btn btn-danger mt-1" onClick={handleclearcanvas}>Clear</button>
         </div>
       </div>
@@ -114,6 +135,8 @@ const RoomPage = ({user,socket,users}) => {
         socket={socket}
          />  
         </div>
+      <Chat user={user} socket={socket} />
+      <Voice user={user} socket={socket} />
     </div>
   );
 };
